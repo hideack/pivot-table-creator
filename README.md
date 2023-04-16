@@ -5,10 +5,8 @@ This script generates a pivot table from a CSV file, with support for additional
 ## Usage
 
 1. Install the required dependencies:
-
-## npm install
-
-2. Run the script with the desired options:
+2. npm install
+3. Run the script with the desired options:
 
 $ node index.js -- [options]
 
