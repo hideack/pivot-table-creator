@@ -14,6 +14,7 @@ async function main() {
     .option('-v, --valueDimension <valueIndex>', 'Value dimension column index', 2)
     .option('-e, --extraColumns <columnIndexes>', 'Additional column indexes to be included', '')
     .option('--rowTotals', 'Include row totals in the output', false)
+    .option('--skipZeroTotals', 'Skip rows with zero totals in the output', false)
     .parse();
 
   const options = program.opts();
@@ -117,8 +118,10 @@ async function main() {
       row.push(rowTotal);
     }
 
-    const csvRow = Papa.unparse([row]);
-    fs.appendFileSync(outputFilePath, csvRow + '\n');
+    if (!options.skipZeroTotals || rowTotal !== 0) {
+      const csvRow = Papa.unparse([row]);
+      fs.appendFileSync(outputFilePath, csvRow + '\n');
+    }
   }
 
   const endTime = performance.now();
