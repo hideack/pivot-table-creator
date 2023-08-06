@@ -1,6 +1,6 @@
 # Pivot-table-creator
 
-This script generates a pivot table from a CSV file, with support for additional columns, row totals, and command line options. It is designed for large datasets and is memory-efficient.
+This script generates a pivot table from a CSV file. It supports additional columns, row totals, weekly and monthly totals, and offers various command line options. It is designed for large datasets and is memory-efficient.
 
 ## Usage
 
@@ -19,6 +19,8 @@ $ node index.js -- [options]
 - -v, --valueDimension <valueIndex>: Value dimension column index (default: 2)
 - -e, --extraColumns <columnIndexes>: Additional column indexes to be included (default: "")
 - --rowTotals: Include row totals in the output (default: false)
+- `--weeklyTotals`: Include weekly totals in the output based on the USA calendar system where weeks start on Sunday (default: false)
+- `--monthlyTotals`: Include monthly totals in the output (default: false)
 
 ## License
 
