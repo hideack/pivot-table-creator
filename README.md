@@ -19,6 +19,8 @@ $ node index.js -- [options]
 - -v, --valueDimension <valueIndex>: Value dimension column index (default: 2)
 - -e, --extraColumns <columnIndexes>: Additional column indexes to be included (default: "")
 - --rowTotals: Include row totals in the output (default: false)
+- `--minRowTotal <minRowTotal>`: Minimum row total for inclusion in the output (default: null)
+- `--maxRowTotal <maxRowTotal>`: Maximum row total for inclusion in the output (default: null)
 - `--weeklyTotals`: Include weekly totals in the output based on the USA calendar system where weeks start on Sunday (default: false)
 - `--monthlyTotals`: Include monthly totals in the output (default: false)
 
