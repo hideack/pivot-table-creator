@@ -17,6 +17,8 @@ async function main() {
     .option('--skipZeroTotals', 'Skip rows with zero totals in the output', false)
     .option('--weeklyTotals', 'Include weekly totals in the output', false)
     .option('--monthlyTotals', 'Include monthly totals in the output', false)
+    .option('--minRowTotal <minRowTotal>', 'Minimum row total for inclusion in the output', null)
+    .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
     .parse();
 
   const options = program.opts();
