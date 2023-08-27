@@ -35,6 +35,10 @@ async function main() {
   const columnDimension = parseInt(options.columnDimension);
   const valueDimension = parseInt(options.valueDimension);
 
+  // 
+  const minRowTotal = options.minRowTotal !== null ? parseFloat(options.minRowTotal) : null;
+  const maxRowTotal = options.maxRowTotal !== null ? parseFloat(options.maxRowTotal) : null;
+
   // Parse extra column indexes
   const extraColumns = options.extraColumns.split(',').filter(x => x !== '').map(x => parseInt(x));
 
@@ -158,6 +162,9 @@ async function main() {
       row.push(rowTotal);
     }
 
+    // Check if the row total is within the specified range
+    const withinRange = (minRowTotal === null || rowTotal >= minRowTotal) && (maxRowTotal === null || rowTotal <= maxRowTotal);
+
     if (options.weeklyTotals) {
       for (let week = 1; week <= 52; week++) {
         const weeklyTotalKey = `week-${week}-${rowValue}`;
@@ -172,7 +179,7 @@ async function main() {
       }
     }
 
-    if (!options.skipZeroTotals || rowTotal !== 0) {
+    if ((!options.skipZeroTotals || rowTotal !== 0) && withinRange) {
       const csvRow = Papa.unparse([row]);
       fs.appendFileSync(outputFilePath, csvRow + '\n');
     }
