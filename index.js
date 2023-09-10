@@ -17,6 +17,8 @@ async function main() {
     .option('--skipZeroTotals', 'Skip rows with zero totals in the output', false)
     .option('--weeklyTotals', 'Include weekly totals in the output', false)
     .option('--monthlyTotals', 'Include monthly totals in the output', false)
+    .option('--minRowTotal <minRowTotal>', 'Minimum row total for inclusion in the output', null)
+    .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
     .parse();
 
   const options = program.opts();
@@ -32,6 +34,10 @@ async function main() {
   const rowDimension = parseInt(options.rowDimension);
   const columnDimension = parseInt(options.columnDimension);
   const valueDimension = parseInt(options.valueDimension);
+
+  // 
+  const minRowTotal = options.minRowTotal !== null ? parseFloat(options.minRowTotal) : null;
+  const maxRowTotal = options.maxRowTotal !== null ? parseFloat(options.maxRowTotal) : null;
 
   // Parse extra column indexes
   const extraColumns = options.extraColumns.split(',').filter(x => x !== '').map(x => parseInt(x));
@@ -156,6 +162,9 @@ async function main() {
       row.push(rowTotal);
     }
 
+    // Check if the row total is within the specified range
+    const withinRange = (minRowTotal === null || rowTotal >= minRowTotal) && (maxRowTotal === null || rowTotal <= maxRowTotal);
+
     if (options.weeklyTotals) {
       for (let week = 1; week <= 52; week++) {
         const weeklyTotalKey = `week-${week}-${rowValue}`;
@@ -170,7 +179,7 @@ async function main() {
       }
     }
 
-    if (!options.skipZeroTotals || rowTotal !== 0) {
+    if ((!options.skipZeroTotals || rowTotal !== 0) && withinRange) {
       const csvRow = Papa.unparse([row]);
       fs.appendFileSync(outputFilePath, csvRow + '\n');
     }
