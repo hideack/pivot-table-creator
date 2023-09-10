@@ -108,7 +108,14 @@ async function main() {
 
   const rows = Array.from(pivotTable.rows).sort();
   const columns = Array.from(pivotTable.columns).sort();
-  const header = [["Row \\ Column", ...extraColumns.map(col => `Extra Col ${col}`), ...columns]];
+
+  // Existing header definition
+  const header = [["Row \\ Column"]];
+
+  // Add extra column headers only if omitBody is not set
+  if (!options.omitBody) {
+    header[0].push(...extraColumns.map(col => `Extra Col ${col}`), ...columns);
+  }
 
   if (options.rowTotals) {
     header[0].push('Row Total');
