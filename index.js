@@ -19,6 +19,7 @@ async function main() {
     .option('--monthlyTotals', 'Include monthly totals in the output', false)
     .option('--minRowTotal <minRowTotal>', 'Minimum row total for inclusion in the output', null)
     .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
+    .option('--omitBody', 'Omit the body of the pivot table and only include totals', false)
     .parse();
 
   const options = program.opts();
@@ -107,7 +108,17 @@ async function main() {
 
   const rows = Array.from(pivotTable.rows).sort();
   const columns = Array.from(pivotTable.columns).sort();
-  const header = [["Row \\ Column", ...extraColumns.map(col => `Extra Col ${col}`), ...columns]];
+
+  // Existing header definition
+  const header = [["Row \\ Column"]];
+
+  // Always add extra column headers
+  header[0].push(...extraColumns.map(col => `Extra Col ${col}`));
+
+  // Add main column headers only if omitBody is not set
+  if (!options.omitBody) {
+    header[0].push(...columns);
+  }
 
   if (options.rowTotals) {
     header[0].push('Row Total');
@@ -122,7 +133,7 @@ async function main() {
   if (options.monthlyTotals) {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     for (const month of months) {
-        header[0].push(`${month} Total`);
+      header[0].push(`${month} Total`);
     }
   }
 
@@ -146,15 +157,25 @@ async function main() {
 
     let rowTotal = 0;
 
-    // Add cell values
+    // Calculate rowTotal regardless of whether the body is omitted
     for (const columnValue of columns) {
       const key = `${rowValue}-${columnValue}`;
       if (pivotTable.values.has(key)) {
         const cellValue = pivotTable.values.get(key);
-        row.push(cellValue);
         rowTotal += cellValue;
-      } else {
-        row.push('');
+      }
+    }
+
+    if (!options.omitBody) {
+      // Existing logic to write the body
+      for (const columnValue of columns) {
+        const key = `${rowValue}-${columnValue}`;
+        if (pivotTable.values.has(key)) {
+          const cellValue = pivotTable.values.get(key);
+          row.push(cellValue);
+        } else {
+          row.push('');
+        }
       }
     }
 
