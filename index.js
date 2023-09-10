@@ -112,9 +112,12 @@ async function main() {
   // Existing header definition
   const header = [["Row \\ Column"]];
 
-  // Add extra column headers only if omitBody is not set
+  // Always add extra column headers
+  header[0].push(...extraColumns.map(col => `Extra Col ${col}`));
+
+  // Add main column headers only if omitBody is not set
   if (!options.omitBody) {
-    header[0].push(...extraColumns.map(col => `Extra Col ${col}`), ...columns);
+    header[0].push(...columns);
   }
 
   if (options.rowTotals) {
