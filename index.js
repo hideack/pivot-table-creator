@@ -19,6 +19,7 @@ async function main() {
     .option('--monthlyTotals', 'Include monthly totals in the output', false)
     .option('--minRowTotal <minRowTotal>', 'Minimum row total for inclusion in the output', null)
     .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
+    .option('--omitBody', 'Omit the body of the pivot table and only include totals', false)
     .parse();
 
   const options = program.opts();
@@ -122,7 +123,7 @@ async function main() {
   if (options.monthlyTotals) {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     for (const month of months) {
-        header[0].push(`${month} Total`);
+      header[0].push(`${month} Total`);
     }
   }
 
@@ -146,15 +147,25 @@ async function main() {
 
     let rowTotal = 0;
 
-    // Add cell values
+    // Calculate rowTotal regardless of whether the body is omitted
     for (const columnValue of columns) {
       const key = `${rowValue}-${columnValue}`;
       if (pivotTable.values.has(key)) {
         const cellValue = pivotTable.values.get(key);
-        row.push(cellValue);
         rowTotal += cellValue;
-      } else {
-        row.push('');
+      }
+    }
+
+    if (!options.omitBody) {
+      // Existing logic to write the body
+      for (const columnValue of columns) {
+        const key = `${rowValue}-${columnValue}`;
+        if (pivotTable.values.has(key)) {
+          const cellValue = pivotTable.values.get(key);
+          row.push(cellValue);
+        } else {
+          row.push('');
+        }
       }
     }
 
