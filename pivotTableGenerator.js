@@ -15,9 +15,10 @@ class PivotTableGenerator {
   }
 
   getWeekNumber(date) {
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const daysPassed = (date - startOfYear) / (24 * 60 * 60 * 1000);
-    return Math.ceil((daysPassed + (startOfYear.getDay() === 0 ? 0 : 7 - startOfYear.getDay())) / 7);
+    // 1月4日を基準として、その週を第1週とする
+    const jan4 = new Date(date.getFullYear(), 0, 4);
+    const daysSinceJan4 = Math.round((date - jan4) / (24 * 60 * 60 * 1000));
+    return Math.ceil((daysSinceJan4 + jan4.getDay() + 1) / 7);
   }
 
   processData(data) {
