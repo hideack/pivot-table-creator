@@ -172,5 +172,6 @@ function generatePivotTable(options) {
 }
 
 module.exports = {
-  generatePivotTable
+  generatePivotTable,
+  PivotTableGenerator
 };
