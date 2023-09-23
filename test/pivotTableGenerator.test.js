@@ -22,4 +22,18 @@ describe('PivotTableGenerator', function() {
     // 他の日付に対するテストも追加できます
     // ...
   });
+
+  describe('#generateHeader()', function() {
+    it('should generate the correct header with default options', function() {
+      const generator = new PivotTableGenerator({});
+      const header = generator.generateHeader();
+      expect(header).to.deep.equal([["Row \\ Column"]]);
+    });
+
+    it('should include extra columns when specified', function() {
+      const generator = new PivotTableGenerator({ extraColumns: [1, 2] });
+      const header = generator.generateHeader();
+      expect(header[0]).to.include.members(['Extra Col 1', 'Extra Col 2']);
+    });
+  });
 });
