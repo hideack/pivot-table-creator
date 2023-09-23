@@ -4,8 +4,151 @@ const fs = require('fs');
 const Papa = require('papaparse');
 const { program } = require('commander');
 
-async function main() {
-  // Define command-line options and parse them
+class PivotTableGenerator {
+  constructor(options) {
+    this.options = options;
+    this.pivotTable = {
+      rows: new Set(),
+      columns: new Set(),
+      values: new Map(),
+      weeklyTotals: new Map(),
+      monthlyTotals: new Map(),
+      extraInfo: new Map(),
+    };
+  }
+
+  getWeekNumber(date) {
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const daysPassed = (date - startOfYear) / (24 * 60 * 60 * 1000);
+    return Math.ceil((daysPassed + (startOfYear.getDay() === 0 ? 0 : 7 - startOfYear.getDay())) / 7);
+  }
+
+  processData(data) {
+    for (let i = 1; i < data.length; i++) {
+      const rowValue = data[i][this.options.rowDimension];
+      const columnValue = data[i][this.options.columnDimension];
+      const cellValue = parseFloat(data[i][this.options.valueDimension]);
+
+      this.pivotTable.rows.add(rowValue);
+      this.pivotTable.columns.add(columnValue);
+
+      const key = `${rowValue}-${columnValue}`;
+      if (!this.pivotTable.values.has(key)) {
+        this.pivotTable.values.set(key, cellValue);
+      } else {
+        this.pivotTable.values.set(key, this.pivotTable.values.get(key) + cellValue);
+      }
+
+      if (this.options.extraColumns.length > 0) {
+        const extraInfoKey = rowValue;
+        if (!this.pivotTable.extraInfo.has(extraInfoKey)) {
+          const extraInfo = this.options.extraColumns.map(col => data[i][col]);
+          this.pivotTable.extraInfo.set(extraInfoKey, extraInfo);
+        }
+      }
+
+      if (this.options.weeklyTotals || this.options.monthlyTotals) {
+        const date = new Date(data[i][this.options.columnDimension]);
+        const weekNumber = this.getWeekNumber(date);
+        const month = date.getMonth() + 1;
+
+        if (this.options.weeklyTotals) {
+          const weeklyTotalKey = `week-${weekNumber}-${rowValue}`;
+          this.pivotTable.weeklyTotals.set(weeklyTotalKey, (this.pivotTable.weeklyTotals.get(weeklyTotalKey) || 0) + cellValue);
+        }
+
+        if (this.options.monthlyTotals) {
+          const monthlyTotalKey = `month-${month}-${rowValue}`;
+          this.pivotTable.monthlyTotals.set(monthlyTotalKey, (this.pivotTable.monthlyTotals.get(monthlyTotalKey) || 0) + cellValue);
+        }
+      }
+    }
+  }
+
+  generateHeader() {
+    const header = [["Row \\ Column"]];
+    header[0].push(...this.options.extraColumns.map(col => `Extra Col ${col}`));
+    if (!this.options.omitBody) {
+      header[0].push(...Array.from(this.pivotTable.columns).sort());
+    }
+    if (this.options.rowTotals) {
+      header[0].push('Row Total');
+    }
+    if (this.options.weeklyTotals) {
+      for (let week = 1; week <= 52; week++) {
+        header[0].push(`Week ${week} Total`);
+      }
+    }
+    if (this.options.monthlyTotals) {
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      for (const month of months) {
+        header[0].push(`${month} Total`);
+      }
+    }
+    return header;
+  }
+
+  generateBody() {
+    const rows = Array.from(this.pivotTable.rows).sort();
+    const columns = Array.from(this.pivotTable.columns).sort();
+    const body = [];
+
+    for (const rowValue of rows) {
+      const row = [rowValue];
+      if (this.pivotTable.extraInfo.has(rowValue)) {
+        row.push(...this.pivotTable.extraInfo.get(rowValue));
+      }
+
+      let rowTotal = 0;
+      for (const columnValue of columns) {
+        const key = `${rowValue}-${columnValue}`;
+        if (this.pivotTable.values.has(key)) {
+          const cellValue = this.pivotTable.values.get(key);
+          rowTotal += cellValue;
+        }
+      }
+
+      if (!this.options.omitBody) {
+        for (const columnValue of columns) {
+          const key = `${rowValue}-${columnValue}`;
+          if (this.pivotTable.values.has(key)) {
+            const cellValue = this.pivotTable.values.get(key);
+            row.push(cellValue);
+          } else {
+            row.push('');
+          }
+        }
+      }
+
+      if (this.options.rowTotals) {
+        row.push(rowTotal);
+      }
+
+      const withinRange = (this.options.minRowTotal === null || rowTotal >= this.options.minRowTotal) && (this.options.maxRowTotal === null || rowTotal <= this.options.maxRowTotal);
+
+      if (this.options.weeklyTotals) {
+        for (let week = 1; week <= 52; week++) {
+          const weeklyTotalKey = `week-${week}-${rowValue}`;
+          row.push(this.pivotTable.weeklyTotals.get(weeklyTotalKey) || '');
+        }
+      }
+
+      if (this.options.monthlyTotals) {
+        for (let month = 1; month <= 12; month++) {
+          const monthlyTotalKey = `month-${month}-${rowValue}`;
+          row.push(this.pivotTable.monthlyTotals.get(monthlyTotalKey) || '');
+        }
+      }
+
+      if ((!this.options.skipZeroTotals || rowTotal !== 0) && withinRange) {
+        body.push(row);
+      }
+    }
+    return body;
+  }
+}
+
+function parseOptions() {
   program
     .option('-i, --input <inputFile>', 'Input CSV file path', 'input.csv')
     .option('-o, --output <outputFile>', 'Output CSV file path', 'output.csv')
@@ -23,189 +166,34 @@ async function main() {
     .parse();
 
   const options = program.opts();
+  options.rowDimension = parseInt(options.rowDimension);
+  options.columnDimension = parseInt(options.columnDimension);
+  options.valueDimension = parseInt(options.valueDimension);
+  options.minRowTotal = options.minRowTotal !== null ? parseFloat(options.minRowTotal) : null;
+  options.maxRowTotal = options.maxRowTotal !== null ? parseFloat(options.maxRowTotal) : null;
+  options.extraColumns = options.extraColumns.split(',').filter(x => x !== '').map(x => parseInt(x));
+  return options;
+}
 
+async function main() {
+  const options = parseOptions();
   console.log(`Input file: ${options.input}`);
   console.log(`Output file: ${options.output}`);
 
-  // Set input and output file paths
-  const inputFilePath = options.input;
-  const outputFilePath = options.output;
-
-  // Set column indexes for row, column, and value dimensions
-  const rowDimension = parseInt(options.rowDimension);
-  const columnDimension = parseInt(options.columnDimension);
-  const valueDimension = parseInt(options.valueDimension);
-
-  // 
-  const minRowTotal = options.minRowTotal !== null ? parseFloat(options.minRowTotal) : null;
-  const maxRowTotal = options.maxRowTotal !== null ? parseFloat(options.maxRowTotal) : null;
-
-  // Parse extra column indexes
-  const extraColumns = options.extraColumns.split(',').filter(x => x !== '').map(x => parseInt(x));
-
-  // Read data from the CSV file
-  console.log('Reading CSV file...');
-  const fileContent = fs.readFileSync(inputFilePath, 'utf8');
+  const fileContent = fs.readFileSync(options.input, 'utf8');
   const data = Papa.parse(fileContent, { header: false, skipEmptyLines: true }).data;
 
-  // Define the pivot table structure
-  const pivotTable = {
-    rows: new Set(),
-    columns: new Set(),
-    values: new Map(),
-    weeklyTotals: new Map(),
-    monthlyTotals: new Map(),
-    extraInfo: new Map(),
-  };
+  const pivotTableGenerator = new PivotTableGenerator(options);
+  pivotTableGenerator.processData(data);
 
-  function getWeekNumber(date) {
-    const startOfYear = new Date(date.getFullYear(), 0, 1); // 1月1日
-    const daysPassed = (date - startOfYear) / (24 * 60 * 60 * 1000);
-    return Math.ceil((daysPassed + (startOfYear.getDay() === 0 ? 0 : 7 - startOfYear.getDay())) / 7);
-  }
-
-  // Process data to create the pivot table
-  for (let i = 1; i < data.length; i++) {
-    const rowValue = data[i][rowDimension];
-    const columnValue = data[i][columnDimension];
-    const cellValue = parseFloat(data[i][valueDimension]);
-
-    pivotTable.rows.add(rowValue);
-    pivotTable.columns.add(columnValue);
-
-    const key = `${rowValue}-${columnValue}`;
-    if (!pivotTable.values.has(key)) {
-      pivotTable.values.set(key, cellValue);
-    } else {
-      pivotTable.values.set(key, pivotTable.values.get(key) + cellValue);
-    }
-
-    // Store extra column information
-    if (extraColumns.length > 0) {
-      const extraInfoKey = rowValue;
-      if (!pivotTable.extraInfo.has(extraInfoKey)) {
-        const extraInfo = extraColumns.map(col => data[i][col]);
-        pivotTable.extraInfo.set(extraInfoKey, extraInfo);
-      }
-    }
-
-    if (options.weeklyTotals || options.monthlyTotals) {
-      const date = new Date(data[i][columnDimension]);
-      const weekNumber = getWeekNumber(date);
-      const month = date.getMonth() + 1;
-
-      if (options.weeklyTotals) {
-        const weeklyTotalKey = `week-${weekNumber}-${rowValue}`;
-        pivotTable.weeklyTotals.set(weeklyTotalKey, (pivotTable.weeklyTotals.get(weeklyTotalKey) || 0) + cellValue);
-      }
-
-      if (options.monthlyTotals) {
-        const monthlyTotalKey = `month-${month}-${rowValue}`;
-        pivotTable.monthlyTotals.set(monthlyTotalKey, (pivotTable.monthlyTotals.get(monthlyTotalKey) || 0) + cellValue);
-      }
-    }
-  }
-
-  const rows = Array.from(pivotTable.rows).sort();
-  const columns = Array.from(pivotTable.columns).sort();
-
-  // Existing header definition
-  const header = [["Row \\ Column"]];
-
-  // Always add extra column headers
-  header[0].push(...extraColumns.map(col => `Extra Col ${col}`));
-
-  // Add main column headers only if omitBody is not set
-  if (!options.omitBody) {
-    header[0].push(...columns);
-  }
-
-  if (options.rowTotals) {
-    header[0].push('Row Total');
-  }
-
-  if (options.weeklyTotals) {
-    for (let week = 1; week <= 52; week++) { // Assuming maximum 52 weeks in a year
-      header[0].push(`Week ${week} Total`);
-    }
-  }
-
-  if (options.monthlyTotals) {
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    for (const month of months) {
-      header[0].push(`${month} Total`);
-    }
-  }
+  const header = pivotTableGenerator.generateHeader();
+  const body = pivotTableGenerator.generateBody();
 
   const csvHeader = Papa.unparse(header);
+  const csvBody = Papa.unparse(body);
 
-  // Write the pivot table header to the output file
-  console.log('Writing CSV header...');
-  fs.writeFileSync(outputFilePath, csvHeader + '\n');
-
-  // Render the pivot table body and write it to the output file
-  const startTime = performance.now();
-  console.log('Writing CSV body...');
-
-  for (const rowValue of rows) {
-    const row = [rowValue];
-    
-    // Add extra column information
-    if (pivotTable.extraInfo.has(rowValue)) {
-      row.push(...pivotTable.extraInfo.get(rowValue));
-    }
-
-    let rowTotal = 0;
-
-    // Calculate rowTotal regardless of whether the body is omitted
-    for (const columnValue of columns) {
-      const key = `${rowValue}-${columnValue}`;
-      if (pivotTable.values.has(key)) {
-        const cellValue = pivotTable.values.get(key);
-        rowTotal += cellValue;
-      }
-    }
-
-    if (!options.omitBody) {
-      // Existing logic to write the body
-      for (const columnValue of columns) {
-        const key = `${rowValue}-${columnValue}`;
-        if (pivotTable.values.has(key)) {
-          const cellValue = pivotTable.values.get(key);
-          row.push(cellValue);
-        } else {
-          row.push('');
-        }
-      }
-    }
-
-    if (options.rowTotals) {
-      row.push(rowTotal);
-    }
-
-    // Check if the row total is within the specified range
-    const withinRange = (minRowTotal === null || rowTotal >= minRowTotal) && (maxRowTotal === null || rowTotal <= maxRowTotal);
-
-    if (options.weeklyTotals) {
-      for (let week = 1; week <= 52; week++) {
-        const weeklyTotalKey = `week-${week}-${rowValue}`;
-        row.push(pivotTable.weeklyTotals.get(weeklyTotalKey) || '');
-      }
-    }
-
-    if (options.monthlyTotals) {
-      for (let month = 1; month <= 12; month++) {
-        const monthlyTotalKey = `month-${month}-${rowValue}`;
-        row.push(pivotTable.monthlyTotals.get(monthlyTotalKey) || '');
-      }
-    }
-
-    if ((!options.skipZeroTotals || rowTotal !== 0) && withinRange) {
-      const csvRow = Papa.unparse([row]);
-      fs.appendFileSync(outputFilePath, csvRow + '\n');
-    }
-  }
-
-  const endTime = performance.now();
-  console.log(`Pivot table created successfully. Time taken: ${endTime - startTime} ms.`);
+  fs.writeFileSync(options.output, csvHeader + '\n' + csvBody);
+  console.log('Pivot table created successfully.');
 }
+
+module.exports = main;
