@@ -3,14 +3,18 @@ const Papa = require('papaparse');
 
 class PivotTableGenerator {
   constructor(options) {
-    this.options = options;
+    this.options = {
+      extraColumns: options.extraColumns || [],
+      ...options
+    };
+
     this.pivotTable = {
       rows: new Set(),
       columns: new Set(),
       values: new Map(),
       weeklyTotals: new Map(),
       monthlyTotals: new Map(),
-      extraInfo: new Map(),
+      extraInfo: new Map()
     };
   }
 
