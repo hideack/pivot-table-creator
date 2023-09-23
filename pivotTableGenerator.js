@@ -146,6 +146,11 @@ class PivotTableGenerator {
 }
 
 function generatePivotTable(options) {
+  console.log(`Input file: ${options.input}`);
+  console.log(`Output file: ${options.output}`);
+
+  const startTime = Date.now();
+
   const fileContent = fs.readFileSync(options.input, 'utf8');
   const data = Papa.parse(fileContent, { header: false, skipEmptyLines: true }).data;
 
@@ -159,7 +164,11 @@ function generatePivotTable(options) {
   const csvBody = Papa.unparse(body);
 
   fs.writeFileSync(options.output, csvHeader + '\n' + csvBody);
-  console.log('Pivot table created successfully.');
+
+  const endTime = Date.now();
+  const elapsedTime = endTime - startTime;
+
+  console.log(`Pivot table created successfully. Time taken: ${elapsedTime} ms.`);
 }
 
 module.exports = {
