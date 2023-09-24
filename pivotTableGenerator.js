@@ -31,6 +31,11 @@ class PivotTableGenerator {
       const columnValue = data[i][this.options.columnDimension];
       const cellValue = parseFloat(data[i][this.options.valueDimension]);
 
+      // 数値でないセル値を無視
+      if (isNaN(cellValue)) {
+        continue;
+      }
+
       this.pivotTable.rows.add(rowValue);
       this.pivotTable.columns.add(columnValue);
 
