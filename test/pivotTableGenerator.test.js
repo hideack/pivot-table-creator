@@ -36,4 +36,34 @@ describe('PivotTableGenerator', function() {
       expect(header[0]).to.include.members(['Extra Col 1', 'Extra Col 2']);
     });
   });
+
+  describe('#processData()', function() {
+    it('should ignore non-numeric cell values and not produce NaN in the pivot table', function() {
+      const sampleData = [
+        ['Row', 'Column', 'Value'],
+        ['A', '2023-01-01', '10'],
+        ['A', '2023-01-02', 'not-a-number'],
+        ['B', '2023-01-01', '20'],
+        ['B', '2023-01-02', '30']
+      ];
+
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2,
+        weeklyTotals: true,
+        monthlyTotals: true
+      };
+
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+
+      // Check if the value for 'A-2023-01-02' is ignored and not producing NaN
+      expect(generator.pivotTable.values.get('A-2023-01-02')).to.be.undefined;
+
+      // Check if weekly and monthly totals are not NaN
+      expect(generator.pivotTable.weeklyTotals.get('week-1-A')).to.equal(10);
+      expect(generator.pivotTable.monthlyTotals.get('month-1-A')).to.equal(10);
+    });
+  });
 });
