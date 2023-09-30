@@ -16,6 +16,7 @@ function parseOptions() {
     .option('--minRowTotal <minRowTotal>', 'Minimum row total for inclusion in the output', null)
     .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
     .option('--omitBody', 'Omit the body of the pivot table and only include totals', false)
+    .option('-m, --matchList <matchFile>', 'Text file containing strings for row filtering', null)
     .parse();
 
   const options = program.opts();
