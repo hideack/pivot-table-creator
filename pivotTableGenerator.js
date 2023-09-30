@@ -9,7 +9,12 @@ class PivotTableGenerator {
     };
 
     if (this.options.matchList) {
+      try {
         this.matchingStrings = fs.readFileSync(this.options.matchList, 'utf8').trim().split('\n');
+      } catch (error) {
+        console.error("Error reading the match list file:", error);
+        this.matchingStrings = null;
+      }
     } else {
         this.matchingStrings = null;
     }
