@@ -8,6 +8,12 @@ class PivotTableGenerator {
       ...options
     };
 
+    if (this.options.matchList) {
+        this.matchingStrings = fs.readFileSync(this.options.matchList, 'utf8').trim().split('\n');
+    } else {
+        this.matchingStrings = null;
+    }
+
     this.pivotTable = {
       rows: new Set(),
       columns: new Set(),
@@ -30,6 +36,11 @@ class PivotTableGenerator {
       const rowValue = data[i][this.options.rowDimension];
       const columnValue = data[i][this.options.columnDimension];
       const cellValue = parseFloat(data[i][this.options.valueDimension]);
+
+      // If matchingStrings is provided and rowValue is not in it, skip this row
+      if (this.matchingStrings && !this.matchingStrings.includes(rowValue)) {
+          continue;
+      }
 
       // 数値でないセル値を無視
       if (isNaN(cellValue)) {
