@@ -1,6 +1,6 @@
 # Pivot-table-creator
 
-This script generates a pivot table from a CSV file. It supports additional columns, row totals, weekly and monthly totals, and offers various command line options including the ability to omit the main body of the pivot table. It is designed for large datasets and is memory-efficient.
+This script generates a pivot table from a CSV file. It provides features like filtering rows based on a match list, supports additional columns, row totals, weekly and monthly totals, and offers various command line options including the ability to omit the main body of the pivot table. It is designed for large datasets and is memory-efficient.
 
 ## Usage
 
@@ -28,6 +28,7 @@ This script generates a pivot table from a CSV file. It supports additional colu
 - `--weeklyTotals`: Include weekly totals in the output based on the USA calendar system where weeks start on Sunday (default: false)
 - `--monthlyTotals`: Include monthly totals in the output (default: false)
 - `--omitBody`: Omit the main body of the pivot table and include only the totals (default: false)
+- `--matchListFile <matchListFile>`: Path to the file containing the list of rows to be included in the pivot table. Each row in this file represents a string to be matched in the input data (default: null).
 
 ## License
 
