@@ -66,4 +66,58 @@ describe('PivotTableGenerator', function() {
       expect(generator.pivotTable.monthlyTotals.get('month-1-A')).to.equal(10);
     });
   });
+
+  describe('#matchListProcessing()', function() {
+    it('should correctly read from a match list file', function() {
+      const generator = new PivotTableGenerator({ matchList: './test/matchListSample.txt' });
+      expect(generator.options.matchList).to.equal('./test/matchListSample.txt');
+    });
+
+    it('should filter rows based on the match list', function() {
+      const sampleData = [
+        ['Row', 'Column', 'Value'],
+        ['AAA', '2023-01-01', '10'],
+        ['DDD', '2023-01-02', '15'],
+        ['BBB', '2023-01-01', '20'],
+        ['CCC', '2023-01-02', '30']
+      ];
+  
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2,
+        matchList: './test/matchListSample.txt'
+      };
+      
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+
+      // DDD is not in the match list, so it should be filtered out.
+      expect(generator.pivotTable.values.has('DDD-2023-01-02')).to.be.false;
+      expect(generator.pivotTable.values.has('AAA-2023-01-01')).to.be.true;
+    });
+  
+    it('should include all rows when no match list is provided', function() {
+      const sampleData = [
+        ['Row', 'Column', 'Value'],
+        ['AAA', '2023-01-01', '10'],
+        ['DDD', '2023-01-02', '15'],
+        ['BBB', '2023-01-01', '20'],
+        ['CCC', '2023-01-02', '30']
+      ];
+  
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2
+      };
+  
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+
+      // All rows should be included.
+      expect(generator.pivotTable.values.has('AAA-2023-01-01')).to.be.true;
+      expect(generator.pivotTable.values.has('DDD-2023-01-02')).to.be.true;
+    });
+  });
 });

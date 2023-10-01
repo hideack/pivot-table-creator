@@ -3,11 +3,11 @@ const { generatePivotTable } = require('./pivotTableGenerator');
 
 function parseOptions() {
   program
-    .option('-i, --input <inputFile>', 'Input CSV file path', 'input.csv')
+    .requiredOption('-i, --input <inputFile>', 'Input CSV file path (required)')
     .option('-o, --output <outputFile>', 'Output CSV file path', 'output.csv')
-    .option('-r, --rowDimension <rowIndex>', 'Row dimension column index', 0)
-    .option('-c, --columnDimension <columnIndex>', 'Column dimension column index', 1)
-    .option('-v, --valueDimension <valueIndex>', 'Value dimension column index', 2)
+    .requiredOption('-r, --rowDimension <rowIndex>', 'Row dimension column index (required)')
+    .requiredOption('-c, --columnDimension <columnIndex>', 'Column dimension column index (required)')
+    .requiredOption('-v, --valueDimension <valueIndex>', 'Value dimension column index (required)')
     .option('-e, --extraColumns <columnIndexes>', 'Additional column indexes to be included', '')
     .option('--rowTotals', 'Include row totals in the output', false)
     .option('--skipZeroTotals', 'Skip rows with zero totals in the output', false)
@@ -16,6 +16,7 @@ function parseOptions() {
     .option('--minRowTotal <minRowTotal>', 'Minimum row total for inclusion in the output', null)
     .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
     .option('--omitBody', 'Omit the body of the pivot table and only include totals', false)
+    .option('--matchList <matchFile>', 'Text file containing strings for row filtering', null)
     .parse();
 
   const options = program.opts();
