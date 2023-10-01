@@ -3,11 +3,11 @@ const { generatePivotTable } = require('./pivotTableGenerator');
 
 function parseOptions() {
   program
-    .option('-i, --input <inputFile>', 'Input CSV file path', 'input.csv')
+    .option('-i, --input <inputFile>', 'Input CSV file path (required)')
     .option('-o, --output <outputFile>', 'Output CSV file path', 'output.csv')
-    .option('-r, --rowDimension <rowIndex>', 'Row dimension column index', 0)
-    .option('-c, --columnDimension <columnIndex>', 'Column dimension column index', 1)
-    .option('-v, --valueDimension <valueIndex>', 'Value dimension column index', 2)
+    .option('-r, --rowDimension <rowIndex>', 'Row dimension column index (required)')
+    .option('-c, --columnDimension <columnIndex>', 'Column dimension column index (required)')
+    .option('-v, --valueDimension <valueIndex>', 'Value dimension column index (required)')
     .option('-e, --extraColumns <columnIndexes>', 'Additional column indexes to be included', '')
     .option('--rowTotals', 'Include row totals in the output', false)
     .option('--skipZeroTotals', 'Skip rows with zero totals in the output', false)
@@ -18,6 +18,10 @@ function parseOptions() {
     .option('--omitBody', 'Omit the body of the pivot table and only include totals', false)
     .option('-m, --matchList <matchFile>', 'Text file containing strings for row filtering', null)
     .parse();
+
+  if (!program.input || typeof program.rowDimension === 'undefined' || typeof program.columnDimension === 'undefined' || typeof program.valueDimension === 'undefined') {
+    program.help();
+  }
 
   const options = program.opts();
   options.rowDimension = parseInt(options.rowDimension);
