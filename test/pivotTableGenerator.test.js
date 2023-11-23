@@ -67,6 +67,66 @@ describe('PivotTableGenerator', function() {
     });
   });
 
+  describe('#processData() with output range specification', function() {
+    const sampleData = [
+      ['Row', 'Column', 'Value'],
+      ['A', '2023-01-01', '10'],
+      ['A', '2023-01-02', '20'],
+      ['B', '2023-01-01', '30'],
+      ['B', '2023-01-02', '40']
+    ];
+  
+    it('should respect specified lower and upper bounds for output range', function() {
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2,
+        outputRangeLower: 1,
+        outputRangeUpper: 2
+      };
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+      expect(generator.pivotTable.values.size).to.equal(2);
+      expect(generator.pivotTable.values.has('A-2023-01-02')).to.be.true;
+      expect(generator.pivotTable.values.has('B-2023-01-02')).to.be.true;
+    });
+  
+    it('should respect only lower bound if upper bound is not specified', function() {
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2,
+        outputRangeLower: 1
+      };
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+      expect(generator.pivotTable.values.size).to.equal(3);
+    });
+  
+    it('should respect only upper bound if lower bound is not specified', function() {
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2,
+        outputRangeUpper: 2
+      };
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+      expect(generator.pivotTable.values.size).to.equal(3);
+    });
+  
+    it('should include all columns if no output range is specified', function() {
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2
+      };
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+      expect(generator.pivotTable.values.size).to.equal(4);
+    });
+  });
+
   describe('#matchListProcessing()', function() {
     it('should correctly read from a match list file', function() {
       const generator = new PivotTableGenerator({ matchList: './test/matchListSample.txt' });
