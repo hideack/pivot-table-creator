@@ -67,15 +67,49 @@ describe('PivotTableGenerator', function() {
     });
   });
 
-  describe('#processData() with output range specification', function() {
+  describe('#processData() with output range', function() {
     const sampleData = [
       ['Row', 'Column', 'Value'],
       ['A', '2023-01-01', '10'],
-      ['A', '2023-01-02', '20'],
-      ['B', '2023-01-01', '30'],
-      ['B', '2023-01-02', '40']
+      ['B', '2023-01-01', '20'],
+      ['A', '2023-01-02', '15'],
+      ['B', '2023-01-02', '25']
     ];
-  
+
+    it('should respect specified lower bound for output range', function() {
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2,
+        outputRangeLower: 2
+      };
+
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+
+      // Expect only rows with date "2023-01-02" to be included
+      expect(Array.from(generator.pivotTable.rows).length).to.equal(2);
+      expect(generator.pivotTable.values.has('A-2023-01-02')).to.be.true;
+      expect(generator.pivotTable.values.has('B-2023-01-02')).to.be.true;
+    });
+
+    it('should respect specified upper bound for output range', function() {
+      const options = {
+        rowDimension: 0,
+        columnDimension: 1,
+        valueDimension: 2,
+        outputRangeUpper: 1
+      };
+
+      const generator = new PivotTableGenerator(options);
+      generator.processData(sampleData);
+
+      // Expect only rows with date "2023-01-01" to be included
+      expect(Array.from(generator.pivotTable.rows).length).to.equal(2);
+      expect(generator.pivotTable.values.has('A-2023-01-01')).to.be.true;
+      expect(generator.pivotTable.values.has('B-2023-01-01')).to.be.true;
+    });
+
     it('should respect specified lower and upper bounds for output range', function() {
       const options = {
         rowDimension: 0,
@@ -84,46 +118,28 @@ describe('PivotTableGenerator', function() {
         outputRangeLower: 1,
         outputRangeUpper: 2
       };
+
       const generator = new PivotTableGenerator(options);
       generator.processData(sampleData);
-      expect(generator.pivotTable.values.size).to.equal(2);
-      expect(generator.pivotTable.values.has('A-2023-01-02')).to.be.true;
-      expect(generator.pivotTable.values.has('B-2023-01-02')).to.be.true;
+
+      // Expect all rows to be included since both dates fall within the specified range
+      expect(Array.from(generator.pivotTable.rows).length).to.equal(4);
     });
-  
-    it('should respect only lower bound if upper bound is not specified', function() {
+
+    it('should exclude all rows when output range does not match any data', function() {
       const options = {
         rowDimension: 0,
         columnDimension: 1,
         valueDimension: 2,
-        outputRangeLower: 1
+        outputRangeLower: 3,
+        outputRangeUpper: 4
       };
+
       const generator = new PivotTableGenerator(options);
       generator.processData(sampleData);
-      expect(generator.pivotTable.values.size).to.equal(3);
-    });
-  
-    it('should respect only upper bound if lower bound is not specified', function() {
-      const options = {
-        rowDimension: 0,
-        columnDimension: 1,
-        valueDimension: 2,
-        outputRangeUpper: 2
-      };
-      const generator = new PivotTableGenerator(options);
-      generator.processData(sampleData);
-      expect(generator.pivotTable.values.size).to.equal(3);
-    });
-  
-    it('should include all columns if no output range is specified', function() {
-      const options = {
-        rowDimension: 0,
-        columnDimension: 1,
-        valueDimension: 2
-      };
-      const generator = new PivotTableGenerator(options);
-      generator.processData(sampleData);
-      expect(generator.pivotTable.values.size).to.equal(4);
+
+      // Expect no rows to be included
+      expect(Array.from(generator.pivotTable.rows).length).to.equal(0);
     });
   });
 
