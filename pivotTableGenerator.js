@@ -5,6 +5,8 @@ class PivotTableGenerator {
   constructor(options) {
     this.options = {
       extraColumns: options.extraColumns || [],
+      outputRangeLower: options.outputRangeLower || null,
+      outputRangeUpper: options.outputRangeUpper || null,
       ...options
     };
 
