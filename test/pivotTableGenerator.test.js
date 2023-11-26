@@ -75,74 +75,103 @@ describe('PivotTableGenerator', function() {
       ['A', '2023-01-02', '15'],
       ['B', '2023-01-02', '25']
     ];
-
+  
     it('should respect specified lower bound for output range', function() {
       const options = {
+        minRowTotal: null,
+        maxRowTotal: null,
         rowDimension: 0,
         columnDimension: 1,
         valueDimension: 2,
         outputRangeLower: 2
       };
-
+  
       const generator = new PivotTableGenerator(options);
       generator.processData(sampleData);
+      const body = generator.generateBody();
 
-      // Expect only rows with date "2023-01-02" to be included
-      expect(Array.from(generator.pivotTable.rows).length).to.equal(2);
-      expect(generator.pivotTable.values.has('A-2023-01-02')).to.be.true;
-      expect(generator.pivotTable.values.has('B-2023-01-02')).to.be.true;
+      // Expect body rows to have only one column value (as lower bound is 2)
+      expect(body.every(row => row.length === 2)).to.be.true;
+
+      // Check if the body includes only the data for "2023-01-02" (lower bound is 2)
+      expect(body).to.deep.equal([
+        ['A', 15],
+        ['B', 25]
+      ]);
     });
-
+  
     it('should respect specified upper bound for output range', function() {
       const options = {
+        minRowTotal: null,
+        maxRowTotal: null,
         rowDimension: 0,
         columnDimension: 1,
         valueDimension: 2,
         outputRangeUpper: 1
       };
-
+ 
       const generator = new PivotTableGenerator(options);
       generator.processData(sampleData);
+      const body = generator.generateBody();
 
-      // Expect only rows with date "2023-01-01" to be included
-      expect(Array.from(generator.pivotTable.rows).length).to.equal(2);
-      expect(generator.pivotTable.values.has('A-2023-01-01')).to.be.true;
-      expect(generator.pivotTable.values.has('B-2023-01-01')).to.be.true;
+      // Expect body rows to have only one column value (as upper bound is 1)
+      expect(body.every(row => row.length === 2)).to.be.true;
+
+      // Check if the body includes only the data for "2023-01-01" (upper bound is 1)
+      expect(body).to.deep.equal([
+        ['A', 10],
+        ['B', 20]
+      ]);
     });
-
+ 
     it('should respect specified lower and upper bounds for output range', function() {
       const options = {
+        minRowTotal: null,
+        maxRowTotal: null,
         rowDimension: 0,
         columnDimension: 1,
         valueDimension: 2,
         outputRangeLower: 1,
         outputRangeUpper: 2
       };
-
+ 
       const generator = new PivotTableGenerator(options);
       generator.processData(sampleData);
+      const body = generator.generateBody();
+  
+      // Expect body rows to include both column values
+      expect(body.every(row => row.length === 3)).to.be.true;
 
-      // Expect all rows to be included since both dates fall within the specified range
-      expect(Array.from(generator.pivotTable.rows).length).to.equal(4);
+      // Check if the body includes the data for both "2023-01-01" and "2023-01-02"
+      expect(body).to.deep.equal([
+        ['A', 10, 15],
+        ['B', 20, 25]
+      ]);
     });
-
+ 
     it('should exclude all rows when output range does not match any data', function() {
       const options = {
+        minRowTotal: null,
+        maxRowTotal: null,
         rowDimension: 0,
         columnDimension: 1,
         valueDimension: 2,
         outputRangeLower: 3,
         outputRangeUpper: 4
       };
-
+ 
       const generator = new PivotTableGenerator(options);
       generator.processData(sampleData);
+      const body = generator.generateBody();
 
-      // Expect no rows to be included
-      expect(Array.from(generator.pivotTable.rows).length).to.equal(0);
+      // 
+      expect(body).to.deep.equal([
+        ['A'],
+        ['B']
+      ]);
     });
   });
-
+  
   describe('#matchListProcessing()', function() {
     it('should correctly read from a match list file', function() {
       const generator = new PivotTableGenerator({ matchList: './test/matchListSample.txt' });
