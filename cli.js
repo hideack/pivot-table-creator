@@ -17,6 +17,8 @@ function parseOptions() {
     .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
     .option('--omitBody', 'Omit the body of the pivot table and only include totals', false)
     .option('--matchList <matchFile>', 'Text file containing strings for row filtering', null)
+    .option('--outputRangeLower <outputRangeLower>', 'Lower bound of output column range', 1)
+    .option('--outputRangeUpper <outputRangeUpper>', 'Upper bound of output column range')
     .parse();
 
   const options = program.opts();
@@ -26,6 +28,8 @@ function parseOptions() {
   options.minRowTotal = options.minRowTotal !== null ? parseFloat(options.minRowTotal) : null;
   options.maxRowTotal = options.maxRowTotal !== null ? parseFloat(options.maxRowTotal) : null;
   options.extraColumns = options.extraColumns.split(',').filter(x => x !== '').map(x => parseInt(x));
+  options.outputRangeLower = options.outputRangeLower ? parseInt(options.outputRangeLower) : null;
+  options.outputRangeUpper = options.outputRangeUpper ? parseInt(options.outputRangeUpper) : null;
   return options;
 }
 

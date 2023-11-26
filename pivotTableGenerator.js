@@ -5,6 +5,8 @@ class PivotTableGenerator {
   constructor(options) {
     this.options = {
       extraColumns: options.extraColumns || [],
+      outputRangeLower: options.outputRangeLower || null,
+      outputRangeUpper: options.outputRangeUpper || null,
       ...options
     };
 
@@ -90,9 +92,15 @@ class PivotTableGenerator {
 
   generateHeader() {
     const header = [["Row \\ Column"]];
+
+    // 出力範囲を決定
+    const outputRangeLower = this.options.outputRangeLower || 1;
+    const outputRangeUpper = this.options.outputRangeUpper || this.pivotTable.columns.size;
+
     header[0].push(...this.options.extraColumns.map(col => `Extra Col ${col}`));
     if (!this.options.omitBody) {
-      header[0].push(...Array.from(this.pivotTable.columns).sort());
+      const sortedColumns = Array.from(this.pivotTable.columns).sort();
+      header[0].push(...sortedColumns.slice(outputRangeLower - 1, outputRangeUpper));
     }
     if (this.options.rowTotals) {
       header[0].push('Row Total');
@@ -116,6 +124,10 @@ class PivotTableGenerator {
     const columns = Array.from(this.pivotTable.columns).sort();
     const body = [];
 
+    // 出力範囲を決定
+    const outputRangeLower = this.options.outputRangeLower || 1;
+    const outputRangeUpper = this.options.outputRangeUpper || columns.length;
+  
     for (const rowValue of rows) {
       const row = [rowValue];
       if (this.pivotTable.extraInfo.has(rowValue)) {
@@ -131,8 +143,9 @@ class PivotTableGenerator {
         }
       }
 
-      if (!this.options.omitBody) {
-        for (const columnValue of columns) {
+      if (!this.options.omitBody && ((outputRangeLower - 1) < columns.length)) {
+        for (let i = outputRangeLower - 1; i < outputRangeUpper; i++) {
+          const columnValue = columns[i];
           const key = `${rowValue}-${columnValue}`;
           if (this.pivotTable.values.has(key)) {
             const cellValue = this.pivotTable.values.get(key);
