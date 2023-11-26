@@ -143,7 +143,7 @@ class PivotTableGenerator {
         }
       }
 
-      if (!this.options.omitBody) {
+      if (!this.options.omitBody && ((outputRangeLower - 1) < columns.length)) {
         for (let i = outputRangeLower - 1; i < outputRangeUpper; i++) {
           const columnValue = columns[i];
           const key = `${rowValue}-${columnValue}`;
