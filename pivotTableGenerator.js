@@ -128,7 +128,17 @@ class PivotTableGenerator {
     const outputRangeLower = this.options.outputRangeLower || 1;
     const outputRangeUpper = this.options.outputRangeUpper || columns.length;
   
-    for (const rowValue of rows) {
+    // 進捗表示用の変数を設定
+    const totalRows = rows.length;
+    const progressInterval = Math.ceil(totalRows / 10);
+    console.log(`Total rows to process: ${totalRows}`);
+
+    rows.forEach((rowValue, index) => {
+      // 進捗を10分割して表示
+      if ((index + 1) % progressInterval === 0 || index === totalRows - 1) {
+        console.log(`Processing... ${Math.round(((index + 1) / totalRows) * 100)}% completed (${index + 1} of ${totalRows} rows)`);
+      }
+
       const row = [rowValue];
       if (this.pivotTable.extraInfo.has(rowValue)) {
         row.push(...this.pivotTable.extraInfo.get(rowValue));
@@ -179,7 +189,9 @@ class PivotTableGenerator {
       if ((!this.options.skipZeroTotals || rowTotal !== 0) && withinRange) {
         body.push(row);
       }
-    }
+    });
+
+    console.log("Processing complete. 100% completed.");
     return body;
   }
 }
