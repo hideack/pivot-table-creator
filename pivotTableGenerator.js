@@ -38,7 +38,35 @@ class PivotTableGenerator {
     return Math.ceil((daysSinceJan4 + jan4.getDay() + 1) / 7);
   }
 
+  getWeekRange(weekNumber, year) {
+    const jan1 = new Date(year, 0, 1);
+    const days = (weekNumber - 1) * 7 - jan1.getDay();
+    const weekStart = new Date(jan1);
+    weekStart.setDate(jan1.getDate() + days);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+  
+    return {
+      start: weekStart.toISOString().substring(0, 10),
+      end: weekEnd.toISOString().substring(0, 10)
+    };
+  }
+
   processData(data) {
+    // weeklyTotals オプションが有効な場合、各週の日付範囲を表示
+    if (this.options.weeklyTotals) {
+      const currentDate = new Date();
+      const currentWeekNumber = this.getWeekNumber(currentDate);
+      const currentYear = currentDate.getFullYear();
+      console.log("Weekly Totals Option is enabled. Displaying weeks and their date ranges:");
+
+      for (let week = 1; week <= currentWeekNumber; week++) {
+        const { start, end } = this.getWeekRange(week, currentYear);
+        // 実行時点より未来の週範囲については表示を不要とするためのチェックをここで行う
+        console.log(`Week ${week}: ${start} to ${end}`);
+      }
+    }
+
     for (let i = 1; i < data.length; i++) {
       const rowValue = data[i][this.options.rowDimension];
       const columnValue = data[i][this.options.columnDimension];
