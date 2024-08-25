@@ -13,6 +13,7 @@ function parseOptions() {
     .option('--skipZeroTotals', 'Skip rows with zero totals in the output', false)
     .option('--weeklyTotals', 'Include weekly totals in the output', false)
     .option('--monthlyTotals', 'Include monthly totals in the output', false)
+    .option('--quarterlyTotals', 'Include quarterly totals in the output', false)
     .option('--minRowTotal <minRowTotal>', 'Minimum row total for inclusion in the output', null)
     .option('--maxRowTotal <maxRowTotal>', 'Maximum row total for inclusion in the output', null)
     .option('--omitBody', 'Omit the body of the pivot table and only include totals', false)
