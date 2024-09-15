@@ -27,15 +27,22 @@ class PivotTableGenerator {
       values: new Map(),
       weeklyTotals: new Map(),
       monthlyTotals: new Map(),
+      quarterlyTotals: new Map(),  // 新しいプロパティ
       extraInfo: new Map()
     };
   }
 
   getWeekNumber(date) {
-    // 1月4日を基準として、その週を第1週とする
     const jan4 = new Date(date.getFullYear(), 0, 4);
     const daysSinceJan4 = Math.round((date - jan4) / (24 * 60 * 60 * 1000));
     return Math.ceil((daysSinceJan4 + jan4.getDay() + 1) / 7);
+  }
+
+  getQuarter(month) {
+    if (month <= 3) return 1;
+    else if (month <= 6) return 2;
+    else if (month <= 9) return 3;
+    else return 4;
   }
 
   getWeekRange(weekNumber, year) {
@@ -100,20 +107,24 @@ class PivotTableGenerator {
         }
       }
 
-      if (this.options.weeklyTotals || this.options.monthlyTotals) {
-        const date = new Date(data[i][this.options.columnDimension]);
-        const weekNumber = this.getWeekNumber(date);
-        const month = date.getMonth() + 1;
+      const date = new Date(data[i][this.options.columnDimension]);
+      const weekNumber = this.getWeekNumber(date);
+      const month = date.getMonth() + 1;
+      const quarter = this.getQuarter(month);  // 四半期を取得
 
-        if (this.options.weeklyTotals) {
-          const weeklyTotalKey = `week-${weekNumber}-${rowValue}`;
-          this.pivotTable.weeklyTotals.set(weeklyTotalKey, (this.pivotTable.weeklyTotals.get(weeklyTotalKey) || 0) + cellValue);
-        }
+      if (this.options.weeklyTotals) {
+        const weeklyTotalKey = `week-${weekNumber}-${rowValue}`;
+        this.pivotTable.weeklyTotals.set(weeklyTotalKey, (this.pivotTable.weeklyTotals.get(weeklyTotalKey) || 0) + cellValue);
+      }
 
-        if (this.options.monthlyTotals) {
-          const monthlyTotalKey = `month-${month}-${rowValue}`;
-          this.pivotTable.monthlyTotals.set(monthlyTotalKey, (this.pivotTable.monthlyTotals.get(monthlyTotalKey) || 0) + cellValue);
-        }
+      if (this.options.monthlyTotals) {
+        const monthlyTotalKey = `month-${month}-${rowValue}`;
+        this.pivotTable.monthlyTotals.set(monthlyTotalKey, (this.pivotTable.monthlyTotals.get(monthlyTotalKey) || 0) + cellValue);
+      }
+
+      if (this.options.quarterlyTotals) {  // 四半期オプションが有効な場合
+        const quarterlyTotalKey = `quarter-${quarter}-${rowValue}`;
+        this.pivotTable.quarterlyTotals.set(quarterlyTotalKey, (this.pivotTable.quarterlyTotals.get(quarterlyTotalKey) || 0) + cellValue);
       }
     }
   }
@@ -142,6 +153,12 @@ class PivotTableGenerator {
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       for (const month of months) {
         header[0].push(`${month} Total`);
+      }
+    }
+    if (this.options.quarterlyTotals) {
+      const quarters = ["Q1", "Q2", "Q3", "Q4"];
+      for (const quarter of quarters) {
+        header[0].push(`${quarter} Total`);
       }
     }
     return header;
@@ -211,6 +228,13 @@ class PivotTableGenerator {
         for (let month = 1; month <= 12; month++) {
           const monthlyTotalKey = `month-${month}-${rowValue}`;
           row.push(this.pivotTable.monthlyTotals.get(monthlyTotalKey) || '');
+        }
+      }
+
+      if (this.options.quarterlyTotals) {  // 四半期オプションが有効な場合
+        for (let quarter = 1; quarter <= 4; quarter++) {
+          const quarterlyTotalKey = `quarter-${quarter}-${rowValue}`;
+          row.push(this.pivotTable.quarterlyTotals.get(quarterlyTotalKey) || '');
         }
       }
 
